@@ -377,7 +377,7 @@
         <div id="header-right" style="display: flex; align-items: center; gap: 8px;">
             <a id="back-link" href="#" onclick="event.preventDefault(); showDashboard();">⬅️ Overzicht</a>
             <div id="selector-wrapper" style="display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-                <label id="level-select-label" for="level-select" style="font-size: 13px; color: #818384; font-weight: bold; margin-right: 2px;">Vorige Levels:</label>
+                <label id="level-select-label" for="level-select" style="font-size: 11px; color: #818384; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Vorige levels</label>
                 <select id="level-select" onchange="changeLevel(this.value)" style="background: var(--color-default); color: var(--color-text); border: 1px solid var(--color-border); padding: 5px 8px; border-radius: 6px; font-size: 13px; font-weight: bold; outline: none; cursor: pointer;"></select>
             </div>
         </div>
@@ -407,20 +407,44 @@
     </div>
 
     <script>
-        const levels = [
-            { id: 1, word: "lucky", date: new Date(2026, 4, 31), label: "31 mei" },
-            { id: 2, word: "stekker", date: new Date(2026, 5, 1), label: "1 juni" },
-            { id: 3, word: "knapje", date: new Date(2026, 5, 2), label: "2 juni" },
-            { id: 4, word: "siegens", date: new Date(2026, 5, 3), label: "3 juni" },
-            { id: 5, word: "man bijt hond", date: new Date(2026, 5, 4), label: "4 juni" },
-            { id: 6, word: "lamas", date: new Date(2026, 5, 5), label: "5 juni" },
-            { id: 7, word: "luipaard", date: new Date(2026, 5, 6), label: "6 juni" },
-            { id: 8, word: "judoka", date: new Date(2026, 5, 7), label: "7 juni" },
-            { id: 9, word: "lintworm", date: new Date(2026, 5, 8), label: "8 juni" },
-            { id: 10, word: "tinder", date: new Date(2026, 5, 9), label: "9 juni" },
-            { id: 11, word: "helmke", date: new Date(2026, 5, 10), label: "10 juni" },
-            { id: 12, word: "chemie", date: new Date(2026, 5, 11), label: "11 juni" }
+        function getDutchDateLabel(date) {
+            const months = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+            return `${date.getDate()} ${months[date.getMonth()]}`;
+        }
+
+        // START DATE OF THE GAME: May 30, 2026
+        const START_DATE = new Date(2026, 4, 30);
+
+        // Raw levels list - edit this array to add, remove, or reorder levels!
+        const levelsRaw = [
+            "trouw",
+            "lucky",
+            "stekker",
+            "knapje",
+            "siegens",
+            "man bijt hond",
+            "klimop",
+            "lamas",
+            "fietshelm",
+            "luipaard",
+            "judoka",
+            "lintworm",
+            "tinder",
+            "chemie",
+            "canada",
+            "bruistablet"
         ];
+
+        // Automatically map raw words to level objects with computed dates and labels
+        const levels = levelsRaw.map((word, index) => {
+            const date = new Date(START_DATE.getFullYear(), START_DATE.getMonth(), START_DATE.getDate() + index);
+            return {
+                id: index + 1,
+                word: word,
+                date: date,
+                label: getDutchDateLabel(date)
+            };
+        });
 
         let currentLevelIndex = 0;
         let targetWord = "";
@@ -462,19 +486,14 @@
             return date >= lvl.date;
         }
 
-        function getDutchDateLabel(date) {
-            const months = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
-            return `${date.getDate()} ${months[date.getMonth()]}`;
-        }
-
         function init() {
             targetDate = getTargetDate();
 
             // Set dynamic header date
             document.getElementById('today-date-value').textContent = getDutchDateLabel(targetDate);
 
-            // Event concluded from June 12, 2026 onward
-            const postEventDate = new Date(2026, 5, 12);
+            // Automatically compute event concluded date based on number of levels
+            const postEventDate = new Date(START_DATE.getFullYear(), START_DATE.getMonth(), START_DATE.getDate() + levels.length);
             isPostEvent = targetDate >= postEventDate;
 
             // Populate Level Select
@@ -851,7 +870,14 @@
             updateKeyboard(fullGuess);
 
             if (fullGuess === targetWord) {
-                showMessage("Splendid!", 2000);
+                const winMessages = [
+                    "Goed gedaan knapje!",
+                    "Woohoo!",
+                    "Goed zo!",
+                    "Talent!"
+                ];
+                const randomMsg = winMessages[Math.floor(Math.random() * winMessages.length)];
+                showMessage(randomMsg, 2000);
                 gameOver = true;
                 setTimeout(() => {
                     // Celebration?
