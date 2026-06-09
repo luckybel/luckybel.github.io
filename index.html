@@ -380,6 +380,20 @@
                 font-size: 13px;
             }
         }
+
+        .cake-confetti {
+            position: fixed;
+            top: -50px;
+            z-index: 9999;
+            user-select: none;
+            pointer-events: none;
+            animation: cakeFall linear forwards;
+        }
+
+        @keyframes cakeFall {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg) scale(0.8); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -440,7 +454,7 @@
             "lamas",
             "fietshelm",
             "luipaard",
-            "judoka",
+            "jarig",
             "lintworm",
             "tinder",
             "chemie",
@@ -920,15 +934,25 @@
             updateKeyboard(fullGuess);
 
             if (fullGuess === targetWord) {
-                const winMessages = [
-                    "Goed gedaan knapje!",
-                    "Woohoo!",
-                    "Goed zo!",
-                    "Talent!"
-                ];
-                const randomMsg = winMessages[Math.floor(Math.random() * winMessages.length)];
-                showMessage(randomMsg, 2000);
+                let successMsg = "";
+                if (targetWord === "JARIG") {
+                    successMsg = "Hiep hiep! 🎂";
+                } else {
+                    const winMessages = [
+                        "Goed gedaan knapje!",
+                        "Woohoo!",
+                        "Goed zo!",
+                        "Talent!"
+                    ];
+                    successMsg = winMessages[Math.floor(Math.random() * winMessages.length)];
+                }
+                showMessage(successMsg, 2000);
                 gameOver = true;
+
+                if (targetWord === "JARIG") {
+                    spawnCakes();
+                }
+
                 setTimeout(() => {
                     // Celebration?
                 }, 1500);
@@ -948,6 +972,29 @@
                 el.classList.add('fade-out');
                 el.addEventListener('transitionend', () => el.remove());
             }, duration);
+        }
+
+        function spawnCakes() {
+            const cakeCount = 60;
+            for (let i = 0; i < cakeCount; i++) {
+                const cake = document.createElement('div');
+                cake.className = 'cake-confetti';
+                cake.textContent = '🎂';
+                cake.style.left = Math.random() * 100 + 'vw';
+                
+                const duration = Math.random() * 2 + 2; // 2 to 4 seconds
+                cake.style.animationDuration = duration + 's';
+                cake.style.animationDelay = Math.random() * 1.5 + 's';
+                
+                const size = Math.random() * 1.5 + 1.5; // 1.5rem to 3rem
+                cake.style.fontSize = size + 'rem';
+                
+                document.body.appendChild(cake);
+                
+                setTimeout(() => {
+                    cake.remove();
+                }, (duration + 1.5) * 1000);
+            }
         }
 
         // Keyboard events
