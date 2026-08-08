@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galgje</title>
+    <!-- Use a modern font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-start: #0f172a;
+            --bg-end: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem 1rem;
+            width: 100vw;
+            overflow-x: hidden;
+            /* Prevent overscroll bounce on mobile */
+            overscroll-behavior-y: none;
+        }
+
+        header {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 8vw, 3rem);
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .visuals-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .hangman-drawing {
+            width: 100%;
+            max-width: 200px;
+            aspect-ratio: 1;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hangman-drawing svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--accent);
+            stroke-width: 5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4));
+        }
+
+        .gallows { stroke: var(--text-secondary); filter: none; stroke-width: 4; }
+        
+        .part { display: none; }
+        .part.visible {
+            display: block;
+            animation: drawPart 0.5s ease-out forwards;
+        }
+
+        @keyframes drawPart {
+            0% { stroke-dasharray: 100; stroke-dashoffset: 100; opacity: 0; }
+            100% { stroke-dashoffset: 0; opacity: 1; stroke: var(--danger); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5)); }
+        }
+
+        .word-display {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            gap: clamp(2px, 1vw, 8px);
+            width: 100%;
+            padding: 1rem 0.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .letter-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1 1 0;
+            max-width: 45px;
+            height: clamp(24px, 8vw, 55px);
+            border-bottom: 3px solid var(--text-secondary);
+            font-size: clamp(0.7rem, 4vw, 2rem);
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .letter-box.revealed {
+            border-bottom-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+            text-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(-2px); opacity: 1; }
+        }
+
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 2rem;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: clamp(4px, 1.5vw, 8px);
+            width: 100%;
+        }
+
+        .key {
+            flex: 1;
+            max-width: 45px;
+            height: clamp(45px, 12vw, 55px);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        @media (hover: hover) {
+            .key:hover:not(:disabled) {
+                background: rgba(255, 255, 255, 0.15);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            }
+        }
+
+        .key:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .key:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .key.correct {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: var(--success);
+            opacity: 1;
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+        }
+
+        .key.wrong {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: var(--danger);
+            opacity: 1;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 2rem;
+            border-radius: 2rem;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .modal-title {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 800;
+        }
+
+        .modal-message {
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .modal-word {
+            display: block;
+            font-size: clamp(0.8rem, 4.5vw, 1.5rem);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-top: 0.5rem;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            color: #fff;
+            border: none;
+            padding: 1.2rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 800;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 20px -10px rgba(56, 189, 248, 0.7);
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px -10px rgba(56, 189, 248, 0.9);
+            background: linear-gradient(135deg, #7dd3fc, #a5b4fc);
+        }
+        
+        .btn-restart:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Galgje</h1>
+    </header>
+    
+    <div class="game-container">
+        <div class="visuals-wrapper">
+            <!-- SVG Hangman -->
+            <div class="hangman-drawing">
+                <svg viewBox="0 0 200 200">
+                    <!-- Gallows base -->
+                    <path class="gallows" d="M 30 180 L 170 180 M 60 180 L 60 20 L 140 20 L 140 40" />
+                    <!-- Parts to reveal - path length ~100 for dash array trick -->
+                    <circle class="part part-1" cx="140" cy="60" r="20" />
+                    <path class="part part-2" d="M 140 80 L 140 130" />
+                    <path class="part part-3" d="M 140 90 L 110 110" />
+                    <path class="part part-4" d="M 140 90 L 170 110" />
+                    <path class="part part-5" d="M 140 130 L 110 170" />
+                    <path class="part part-6" d="M 140 130 L 170 170" />
+                </svg>
+            </div>
+
+            <!-- Word Display -->
+            <div class="word-display" id="wordDisplay">
+                <!-- Letters injected by JS -->
+            </div>
+        </div>
+
+        <!-- Keyboard -->
+        <div class="keyboard" id="keyboard">
+            <!-- Keys injected by JS -->
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal-overlay" id="gameOverModal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="modalTitle">Game Over</h2>
+            <p class="modal-message" id="modalMessage">
+                <span id="modalText"></span>
+                <span class="modal-word" id="modalWord"></span>
+            </p>
+            <button class="btn-restart" id="btnRestart">Speel Opnieuw</button>
+        </div>
+    </div>
+
+    <script>
+        const WORD = "wildkakontmaagding".toUpperCase();
+        const MAX_MISTAKES = 6;
+        let mistakes = 0;
+        let guessedLetters = new Set();
+        
+        const wordDisplay = document.getElementById('wordDisplay');
+        const keyboard = document.getElementById('keyboard');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalText = document.getElementById('modalText');
+        const modalWord = document.getElementById('modalWord');
+        const btnRestart = document.getElementById('btnRestart');
+
+        function initGame() {
+            mistakes = 0;
+            guessedLetters.clear();
+            
+            // Hide all hangman parts
+            for (let i = 1; i <= MAX_MISTAKES; i++) {
+                const el = document.querySelector(`.part-${i}`);
+                if(el) {
+                    el.classList.remove('visible');
+                    // Reset stroke animation state by removing and re-adding class isn't strictly necessary 
+                    // but it helps if we ever toggle it rapidly.
+                }
+            }
+            
+            gameOverModal.classList.remove('active');
+            
+            renderWord();
+            renderKeyboard();
+        }
+
+        function renderWord() {
+            wordDisplay.innerHTML = '';
+            for (let char of WORD) {
+                const box = document.createElement('div');
+                box.className = 'letter-box';
+                if (guessedLetters.has(char)) {
+                    box.textContent = char;
+                    box.classList.add('revealed');
+                }
+                wordDisplay.appendChild(box);
+            }
+        }
+
+        function renderKeyboard() {
+            keyboard.innerHTML = '';
+            // QWERTY layout in rows for better mobile alignment
+            const rows = [
+                "QWERTYUIOP".split(""),
+                "ASDFGHJKL".split(""),
+                "ZXCVBNM".split("")
+            ];
+            
+            rows.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'keyboard-row';
+                
+                row.forEach(letter => {
+                    const btn = document.createElement('button');
+                    btn.className = 'key';
+                    btn.textContent = letter;
+                    
+                    if (guessedLetters.has(letter)) {
+                        btn.disabled = true;
+                        if (WORD.includes(letter)) {
+                            btn.classList.add('correct');
+                        } else {
+                            btn.classList.add('wrong');
+                        }
+                    }
+                    
+                    btn.addEventListener('click', () => handleGuess(letter));
+                    rowDiv.appendChild(btn);
+                });
+                
+                keyboard.appendChild(rowDiv);
+            });
+        }
+
+        function handleGuess(letter) {
+            if (guessedLetters.has(letter) || mistakes >= MAX_MISTAKES || gameOverModal.classList.contains('active')) return;
+            
+            guessedLetters.add(letter);
+            
+            if (WORD.includes(letter)) {
+                renderWord();
+                checkWin();
+            } else {
+                mistakes++;
+                const part = document.querySelector(`.part-${mistakes}`);
+                if(part) part.classList.add('visible');
+                checkLoss();
+            }
+            
+            renderKeyboard();
+        }
+
+        function checkWin() {
+            const hasWon = WORD.split('').every(char => guessedLetters.has(char));
+            if (hasWon) {
+                endGame(true);
+            }
+        }
+
+        function checkLoss() {
+            if (mistakes >= MAX_MISTAKES) {
+                endGame(false);
+            }
+        }
+
+        function endGame(isWin) {
+            setTimeout(() => {
+                gameOverModal.classList.add('active');
+                modalWord.textContent = WORD;
+                
+                if (isWin) {
+                    modalTitle.textContent = "Gewonnen!";
+                    modalTitle.style.color = "var(--success)";
+                    modalTitle.style.textShadow = "0 0 20px rgba(34, 197, 94, 0.4)";
+                    modalText.textContent = "Geweldig! Je hebt het woord geraden:";
+                } else {
+                    modalTitle.textContent = "Game Over";
+                    modalTitle.style.color = "var(--danger)";
+                    modalTitle.style.textShadow = "0 0 20px rgba(239, 68, 68, 0.4)";
+                    modalText.textContent = "Helaas! Het woord was:";
+                }
+            }, 600); // Wait a bit for the last animation to finish
+        }
+
+        btnRestart.addEventListener('click', initGame);
+
+        // Allow physical keyboard input
+        document.addEventListener('keydown', (e) => {
+            if (gameOverModal.classList.contains('active')) {
+                if (e.key === 'Enter') initGame();
+                return;
+            }
+            
+            const key = e.key.toUpperCase();
+            if (/^[A-Z]$/.test(key)) {
+                handleGuess(key);
+            }
+        });
+
+        // Start the game initially
+        initGame();
+    </script>
+</body>
+</html>
